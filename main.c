@@ -233,6 +233,7 @@ int parseStdin(Queue *q) {
         tmp = stackPop(s);
         queuePushNode(q, tmp);
       }
+      break;
     case ' ':
     case '\n':
     case '\t':
