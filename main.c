@@ -2,6 +2,8 @@
 #include <stdlib.h>
 // #define DEBUG
 
+int IS_FLOAT_MODE = 0;
+
 /////////////////// STRUCTS, ENUMS ////////////////////
 typedef enum EErrors {
   ERR_UNEXPECTED_CHAR = -1,
@@ -10,10 +12,10 @@ typedef enum EErrors {
   ERR_EMPTY_INPUT = -4
 } EErrors;
 
-typedef enum EType { NUMBER, OPERATOR } EType;
+typedef enum EType { INTEGER, DOUBLE, OPERATOR } EType;
 
 typedef struct Node {
-  int value;
+  void *value;
   EType type;
   struct Node *next;
 } Node;
@@ -38,7 +40,7 @@ Stack *newStack() {
   return s;
 }
 
-void stackPush(Stack *s, int value, EType type) {
+void stackPush(Stack *s, void *value, EType type) {
   Node *new = (Node *)malloc(sizeof(Node));
   new->value = value;
   new->next = s->top;
@@ -64,7 +66,17 @@ Node *stackPop(Stack *s) {
 void stackPrint(Stack *s) {
   Node *tmp = s->top;
   while (tmp != NULL) {
-    printf("%d(%c)\n", tmp->value, tmp->value);
+    switch (tmp->type) {
+    case OPERATOR:
+      printf("%c\n", *(char *)tmp->value);
+      break;
+    case INTEGER:
+      printf("%d\n", *(int *)tmp->value);
+      break;
+    case DOUBLE:
+      printf("%f\n", *(double *)tmp->value);
+      break;
+    }
     tmp = tmp->next;
   }
 }
@@ -81,7 +93,7 @@ Queue *newQueue() {
   return q;
 }
 
-void queuePush(Queue *q, int value, EType type) {
+void queuePush(Queue *q, void *value, EType type) {
   Node *new = (Node *)malloc(sizeof(Node));
   new->value = value;
   new->type = type;
@@ -119,13 +131,24 @@ Node *queuePop(Queue *q) {
 void queuePrint(Queue *q) {
   Node *tmp = q->first;
   while (tmp != NULL) {
-    if (tmp->type == OPERATOR) {
-      printf("%c\n", tmp->value);
-    } else {
-      printf("%d\n", tmp->value);
+    switch (tmp->type) {
+    case OPERATOR:
+      printf("%c\n", *(char *)tmp->value);
+      break;
+    case INTEGER:
+      printf("%d\n", *(int *)tmp->value);
+      break;
+    case DOUBLE:
+      printf("%f\n", *(double *)tmp->value);
+      break;
     }
     tmp = tmp->next;
   }
+}
+
+void nodeFree(Node *n) {
+  free(n->value);
+  free(n);
 }
 
 /////////////////// PARSING ////////////////////
@@ -148,35 +171,46 @@ int precedence(char op1, char op2) {
 
 void pushIfNumberEnded(int *wasNum, int *number, Queue *q) {
   if (*wasNum) {
-    queuePush(q, *number, NUMBER);
+    if (IS_FLOAT_MODE) {
+      double *val = malloc(sizeof(double));
+      *val = *number;
+      queuePush(q, val, DOUBLE);
+    } else {
+      int *val = malloc(sizeof(int));
+      *val = *number;
+      queuePush(q, val, INTEGER);
+    }
     *number = 0;
     *wasNum = 0;
   }
 }
 
 int parseStdin(Queue *q) {
-  Node *tmp = NULL;
   int number = 0;
   int wasNum = 0;
   char ch;
+  void *vp;
+  Node *tmp = NULL;
   Stack *s = newStack();
 
   do {
     switch (ch = getchar()) {
     case '(':
-      stackPush(s, '(', OPERATOR);
+      vp = malloc(sizeof(char));
+      *(char *)vp = '(';
+      stackPush(s, vp, OPERATOR);
       break;
     case ')':
       pushIfNumberEnded(&wasNum, &number, q);
-      while (s->top != NULL && s->top->value != '(') {
+      while (s->top != NULL && *(char *)s->top->value != '(') {
         tmp = stackPop(s);
         queuePushNode(q, tmp);
       }
       if (s->top == NULL) {
         return ERR_MISMATCHED_PARANTHESES;
       }
-      if (s->top->value == '(') {
-        free(stackPop(s));
+      if (*(char *)s->top->value == '(') {
+        nodeFree(stackPop(s));
       }
       break;
     case '+':
@@ -184,14 +218,15 @@ int parseStdin(Queue *q) {
     case '*':
     case '/':
       pushIfNumberEnded(&wasNum, &number, q);
-      while (s->top != NULL && s->top->value != '(' &&
-             precedence(s->top->value, ch) != -1) {
+      while (s->top != NULL && *(char *)s->top->value != '(' &&
+             precedence(*(char *)s->top->value, ch) != -1) {
         tmp = stackPop(s);
         queuePushNode(q, tmp);
       }
-      stackPush(s, ch, OPERATOR);
+      vp = malloc(sizeof(char));
+      *(char *)vp = ch;
+      stackPush(s, vp, OPERATOR);
       break;
-    case '\n':
     case EOF:
       pushIfNumberEnded(&wasNum, &number, q);
       while (s->top != NULL) {
@@ -199,6 +234,9 @@ int parseStdin(Queue *q) {
         queuePushNode(q, tmp);
       }
     case ' ':
+    case '\n':
+    case '\t':
+    case '\r':
       pushIfNumberEnded(&wasNum, &number, q);
       break;
     default:
@@ -219,31 +257,56 @@ int parseStdin(Queue *q) {
   return 0;
 }
 
-int count(int opcode, int arg1, int arg2) {
-  int res = 0;
-  switch (opcode) {
+double count(Node *opcode, Node *arg1, Node *arg2) {
+  double res = 0;
+  int i1, i2;
+  double d1, d2;
+  if (IS_FLOAT_MODE) {
+    d1 = *(double *)arg1->value;
+    d2 = *(double *)arg2->value;
+    switch (*(char *)opcode->value) {
+    case '+':
+      res = d1 + d2;
+      break;
+    case '-':
+      res = d1 - d2;
+      break;
+    case '*':
+      res = d1 * d2;
+      break;
+    case '/':
+      res = d1 / d2;
+      break;
+    }
+    return res;
+  }
+
+  i1 = *(int *)arg1->value;
+  i2 = *(int *)arg2->value;
+  switch (*(char *)opcode->value) {
   case '+':
-    res = arg1 + arg2;
+    res = i1 + i2;
     break;
   case '-':
-    res = arg1 - arg2;
+    res = i1 - i2;
     break;
   case '*':
-    res = arg1 * arg2;
+    res = i1 * i2;
     break;
   case '/':
-    res = arg1 / arg2;
+    res = i1 / i2;
     break;
   }
   return res;
 }
 
-int calculate(Queue *q, int *res) {
+int calculate(Queue *q, double *res) {
   Stack *s = newStack();
 
   while (q->first != NULL) {
+    void *vp;
     Node *nextToken = queuePop(q);
-    if (nextToken->type == NUMBER) {
+    if (nextToken->type == INTEGER || nextToken->type == DOUBLE) {
       stackPushNode(s, nextToken);
     } else {
       if (s->top == NULL || s->top->next == NULL) {
@@ -251,19 +314,39 @@ int calculate(Queue *q, int *res) {
       }
       Node *arg2 = stackPop(s);
       Node *arg1 = stackPop(s);
-      int value = count(nextToken->value, arg1->value, arg2->value);
-      free(arg2);
-      free(arg1);
-      stackPush(s, value, NUMBER);
+      double value = count(nextToken, arg1, arg2);
+      nodeFree(arg2);
+      nodeFree(arg1);
+      nodeFree(nextToken);
+      if (IS_FLOAT_MODE) {
+        vp = malloc(sizeof(double));
+        *(double *)vp = value;
+        stackPush(s, vp, DOUBLE);
+      } else {
+        vp = malloc(sizeof(int));
+        *(int *)vp = value;
+        stackPush(s, vp, INTEGER);
+      }
     }
   }
-  *res = s->top->value;
+
+  if (IS_FLOAT_MODE) {
+    *(double *)res = *(double *)s->top->value;
+  } else {
+    *(int *)res = *(int *)s->top->value;
+  }
+  nodeFree(stackPop(s));
   free(s);
   return 0;
 }
 
 int calculateStdin() {
-  int res;
+  void *res;
+  if (IS_FLOAT_MODE) {
+    res = malloc(sizeof(double));
+  } else {
+    res = malloc(sizeof(int));
+  }
   Queue *resultQueue = newQueue();
 
   int err = parseStdin(resultQueue);
@@ -283,14 +366,20 @@ int calculateStdin() {
   queuePrint(resultQueue);
 #endif /* ifdef DEBUG */
 
-  err = calculate(resultQueue, &res);
+  err = calculate(resultQueue, res);
+  free(resultQueue);
   if (err == ERR_STACK_FUCKED) {
     printf("ERROR: stack corrupted during evaluation. Expression must be "
            "incorrect");
     return ERR_STACK_FUCKED;
   }
 
-  printf("%d", res);
+  if (IS_FLOAT_MODE) {
+    printf("%f", *(double *)res);
+  } else {
+    printf("%d", *(int *)res);
+  }
+  free(res);
 
   return 0;
 }
