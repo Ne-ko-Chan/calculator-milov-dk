@@ -273,6 +273,8 @@ int parseStdin(Queue* q)
         stackPrint(s);
 #endif /* ifdef DEBUG */
     } while (ch != EOF);
+
+    free(s);
     return 0;
 }
 
@@ -322,7 +324,7 @@ double count(Node* opcode, Node* arg1, Node* arg2)
     return res;
 }
 
-int calculate(Queue* q, double* res)
+int calculate(Queue* q, void* res)
 {
     Stack* s = newStack();
 
@@ -424,8 +426,10 @@ int parseArgs(int argc, char** argv)
     return 0;
 }
 
+#ifndef GTEST
 int main(int argc, char** argv)
 {
     IS_FLOAT_MODE = parseArgs(argc, argv);
     return calculateStdin();
 }
+#endif
