@@ -79,7 +79,7 @@ void stackPrint(Stack* s)
             printf("%c\n", *(char*)tmp->value);
             break;
         case INTEGER:
-            printf("%d\n", *(int*)tmp->value);
+            printf("%ld\n", *(long*)tmp->value);
             break;
         case DOUBLE:
             printf("%f\n", *(double*)tmp->value);
@@ -149,7 +149,7 @@ void queuePrint(Queue* q)
             printf("%c\n", *(char*)tmp->value);
             break;
         case INTEGER:
-            printf("%d\n", *(int*)tmp->value);
+            printf("%ld\n", *(long*)tmp->value);
             break;
         case DOUBLE:
             printf("%f\n", *(double*)tmp->value);
@@ -184,7 +184,7 @@ int precedence(char op1, char op2)
     }
 }
 
-void pushIfNumberEnded(int* wasNum, int* number, Queue* q)
+void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
 {
     if (*wasNum) {
         if (IS_FLOAT_MODE) {
@@ -192,7 +192,7 @@ void pushIfNumberEnded(int* wasNum, int* number, Queue* q)
             *val = *number;
             queuePush(q, val, DOUBLE);
         } else {
-            int* val = malloc(sizeof(int));
+            long* val = malloc(sizeof(long));
             *val = *number;
             queuePush(q, val, INTEGER);
         }
@@ -203,7 +203,7 @@ void pushIfNumberEnded(int* wasNum, int* number, Queue* q)
 
 int parseStdin(Queue* q)
 {
-    int number = 0;
+    long number = 0;
     int wasNum = 0;
     char ch;
     void* vp;
@@ -252,6 +252,8 @@ int parseStdin(Queue* q)
             break;
         case ' ':
         case '\n':
+        case '\f':
+        case '\v':
         case '\t':
         case '\r':
             pushIfNumberEnded(&wasNum, &number, q);
@@ -301,8 +303,8 @@ double count(Node* opcode, Node* arg1, Node* arg2)
         return res;
     }
 
-    i1 = *(int*)arg1->value;
-    i2 = *(int*)arg2->value;
+    i1 = *(long*)arg1->value;
+    i2 = *(long*)arg2->value;
     switch (*(char*)opcode->value) {
     case '+':
         res = i1 + i2;
@@ -344,8 +346,8 @@ int calculate(Queue* q, double* res)
                 *(double*)vp = value;
                 stackPush(s, vp, DOUBLE);
             } else {
-                vp = malloc(sizeof(int));
-                *(int*)vp = value;
+                vp = malloc(sizeof(long));
+                *(long*)vp = value;
                 stackPush(s, vp, INTEGER);
             }
         }
@@ -354,7 +356,7 @@ int calculate(Queue* q, double* res)
     if (IS_FLOAT_MODE) {
         *(double*)res = *(double*)s->top->value;
     } else {
-        *(int*)res = *(int*)s->top->value;
+        *(long*)res = *(long*)s->top->value;
     }
     nodeFree(stackPop(s));
     free(s);
@@ -367,8 +369,9 @@ int calculateStdin()
     if (IS_FLOAT_MODE) {
         res = malloc(sizeof(double));
     } else {
-        res = malloc(sizeof(int));
+        res = malloc(sizeof(long));
     }
+
     Queue* resultQueue = newQueue();
 
     int err = parseStdin(resultQueue);
@@ -399,7 +402,7 @@ int calculateStdin()
     if (IS_FLOAT_MODE) {
         printf("%f", *(double*)res);
     } else {
-        printf("%d", *(int*)res);
+        printf("%ld", *(long*)res);
     }
     free(res);
 
@@ -413,7 +416,7 @@ int parseArgs(int argc, char** argv)
         return 0;
     }
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--float") || strcmp(argv[i], "-f")) {
+        if (!strcmp(argv[i], "--float") || !strcmp(argv[i], "-f")) {
             return 1;
         }
         printf("Unnown command line option %s\n", argv[i]);
