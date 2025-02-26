@@ -134,6 +134,12 @@ def test_tricky_operation_order():
     )
     assert res.returncode != 0
 
+def test_good_operation_order():
+    res = subprocess.run(
+        ["build/app.exe", "--float"], input="(3) +(0)", text=True, capture_output=True
+    )
+    assert res.returncode == 0
+
 def test_braces():
     res = subprocess.run(
         ["build/app.exe", "--float"], input="3) + (0", text=True, capture_output=True
