@@ -9,6 +9,8 @@ $(shell mkdir -p build/gtest)
 
 .PHONY: all clean run-int run-float run-unit-tests run-integration-tests build/unit-tests
 
+all: build/app.exe build/unit-tests
+
 venv:
 	@echo "Creating virtual environment"
 	@python -m venv $(VENV_DIR)
@@ -18,6 +20,8 @@ clean:
 	@echo "Cleaning"
 	@rm -rf build/
 	@rm -rf $(VENV_DIR)
+	@rm -rf tests/integration/__pycache__
+	@rm -rf .pytest_cache
 
 run-integration-tests: build/app.exe venv tests/integration/test_math.py
 	@echo "Running integration tests..."
@@ -31,7 +35,7 @@ run-float: build/app.exe
 	@echo "Running in float mode"
 	@build/app.exe --float
 
-run-unit-tests: build/unit-tests
+run-unit-test: build/unit-tests
 	@echo "Running unit-tests"
 	@build/node_test.exe
 	@build/stack_test.exe
