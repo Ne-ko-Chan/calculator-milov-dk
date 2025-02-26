@@ -6,6 +6,7 @@ VENV_DIR := venv
 PYTEST = $(VENV_DIR)/bin/pytest
 
 $(shell mkdir -p build/gtest)
+$(shell git clone https://github.com/google/googletest &> /dev/null)
 
 .PHONY: all clean run-int run-float run-unit-test run-integration-tests build/unit-tests
 
@@ -22,6 +23,7 @@ clean:
 	@rm -rf $(VENV_DIR)
 	@rm -rf tests/integration/__pycache__
 	@rm -rf .pytest_cache
+	@rm -rf googletest
 
 run-integration-tests: build/app.exe venv tests/integration/test_math.py
 	@echo "Running integration tests..."
