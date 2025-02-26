@@ -7,7 +7,7 @@ PYTEST = $(VENV_DIR)/bin/pytest
 
 $(shell mkdir -p build/gtest)
 
-.PHONY: all clean run-int run-float run-unit-tests run-integration-tests build/unit-tests
+.PHONY: all clean run-int run-float run-unit-test run-integration-tests build/unit-tests
 
 all: build/app.exe build/unit-tests
 
@@ -61,7 +61,6 @@ build/precedence_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/precedence_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/precedence_test.exe
 
 build/stack_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/stack_test.cpp
@@ -69,7 +68,6 @@ build/stack_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/stack
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/stack_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/stack_test.exe
 
 build/node_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/node_test.cpp
@@ -77,7 +75,6 @@ build/node_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/node_t
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/node_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/node_test.exe
 
 build/cli_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/cli_test.cpp
@@ -85,7 +82,6 @@ build/cli_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/cli_tes
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/cli_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/cli_test.exe
 
 build/calculate_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/calculate_test.cpp
@@ -93,7 +89,6 @@ build/calculate_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/c
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/calculate_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/calculate_test.exe
 
 build/parse_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/parse_test.cpp
@@ -101,7 +96,6 @@ build/parse_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/parse
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/parse_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/parse_test.exe -g
 
 build/queue_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/queue_test.cpp
@@ -109,7 +103,6 @@ build/queue_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/queue
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/queue_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/queue_test.exe
 
 build/print_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/print_test.cpp
@@ -117,7 +110,6 @@ build/print_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/print
 	@g++ -isystem $(GTEST_DIR)/include -pthread \
 		tests/unit/print_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
-		-fsanitize=address \
 		-o build/print_test.exe
 
 
