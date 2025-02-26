@@ -243,11 +243,11 @@ int parseStdin(Queue* q)
         case '-':
         case '*':
         case '/':
+            pushIfNumberEnded(&wasNum, &number, q);
             if (ExpectedToken != OPERATOR) {
                 exit(ERR_WRONG_TOKEN_ORDER);
             }
             ExpectedToken = 0;
-            pushIfNumberEnded(&wasNum, &number, q);
             while (s->top != NULL && *(char*)s->top->value != '(' && precedence(*(char*)s->top->value, ch) != -1) {
                 tmp = stackPop(s);
                 queuePushNode(q, tmp);
