@@ -273,6 +273,9 @@ int parseStdin(Queue* q)
             break;
         default:
             if (ch >= '0' && ch <= '9') {
+                if (ExpectedToken == OPERATOR) {
+                  exit(ERR_WRONG_TOKEN_ORDER);
+                }
                 wasNum = 1;
                 number = number * 10 + ch - '0';
             } else {
