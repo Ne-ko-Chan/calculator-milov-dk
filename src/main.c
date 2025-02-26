@@ -10,7 +10,10 @@ typedef enum EErrors {
     ERR_UNEXPECTED_CHAR = -1,
     ERR_MISMATCHED_PARANTHESES = -2,
     ERR_STACK_FUCKED = -3,
-    ERR_EMPTY_INPUT = -4
+    ERR_EMPTY_INPUT = -4,
+    ERR_NULL_DIVISION = -5,
+    ERR_TOO_MANY_OPERANDS = -6,
+    ERR_WRONG_TOKEN_ORDER = -7
 } EErrors;
 
 typedef enum EType { INTEGER,
@@ -161,8 +164,12 @@ void queuePrint(Queue* q)
 
 void nodeFree(Node* n)
 {
+    if (n == NULL) {
+        return;
+    }
     free(n->value);
     free(n);
+    n = NULL;
 }
 
 /////////////////// PARSING ////////////////////
@@ -184,6 +191,7 @@ int precedence(char op1, char op2)
     }
 }
 
+int ExpextedToken = 0;
 void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
 {
     if (*wasNum) {
@@ -198,6 +206,7 @@ void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
         }
         *number = 0;
         *wasNum = 0;
+        ExpextedToken = OPERATOR;
     }
 }
 
@@ -234,6 +243,10 @@ int parseStdin(Queue* q)
         case '-':
         case '*':
         case '/':
+            if (ExpextedToken != OPERATOR) {
+                exit(ERR_WRONG_TOKEN_ORDER);
+            }
+            ExpextedToken = 0;
             pushIfNumberEnded(&wasNum, &number, q);
             while (s->top != NULL && *(char*)s->top->value != '(' && precedence(*(char*)s->top->value, ch) != -1) {
                 tmp = stackPop(s);
@@ -299,6 +312,9 @@ double count(Node* opcode, Node* arg1, Node* arg2)
             res = d1 * d2;
             break;
         case '/':
+            if (d2 == 0) {
+                exit(ERR_NULL_DIVISION);
+            }
             res = d1 / d2;
             break;
         }
@@ -318,6 +334,9 @@ double count(Node* opcode, Node* arg1, Node* arg2)
         res = i1 * i2;
         break;
     case '/':
+        if (i2 == 0) {
+            exit(ERR_NULL_DIVISION);
+        }
         res = i1 / i2;
         break;
     }
@@ -355,6 +374,9 @@ int calculate(Queue* q, void* res)
         }
     }
 
+    if (s->top->next != NULL) {
+        exit(ERR_TOO_MANY_OPERANDS);
+    }
     if (IS_FLOAT_MODE) {
         *(double*)res = *(double*)s->top->value;
     } else {

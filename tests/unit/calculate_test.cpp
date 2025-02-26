@@ -61,6 +61,9 @@ TEST(CalculateTest, CountTest)
     *(long*)arg2.value = 2;
     res = count(&op, &arg1, &arg2);
     EXPECT_EQ(res, 4);
+    free(op.value);
+    free(arg1.value);
+    free(arg2.value);
 }
 
 TEST(CalculateTest, CalculateFunc)
@@ -79,6 +82,7 @@ TEST(CalculateTest, CalculateFunc)
     ASSERT_EQ(err, 0) << "errors while calculating";
     EXPECT_EQ(*(long*)res, 1);
     free(q);
+    free(res);
 }
 
 TEST(CalculateTest, CalculateStdin)

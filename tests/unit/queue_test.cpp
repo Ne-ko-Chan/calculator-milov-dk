@@ -25,9 +25,10 @@ void nodeFree(Node*);
 
 TEST(QueueTest, QueueInit)
 {
-    Queue* s = newQueue();
-    EXPECT_EQ(s->first, (void*)0);
-    EXPECT_EQ(s->last, (void*)0);
+    Queue* q = newQueue();
+    EXPECT_EQ(q->first, (void*)0);
+    EXPECT_EQ(q->last, (void*)0);
+    free(q);
 }
 
 TEST(QueueTest, QueuePushPop)

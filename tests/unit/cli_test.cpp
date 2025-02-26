@@ -18,5 +18,8 @@ TEST(CLITest, ParseArgs) {
   EXPECT_EQ(res, 0);
   argc = 2;
   res = parseArgs(argc, (char**)argv);
+  free(argv[0]);
+  free(argv[1]);
+  free(argv);
   EXPECT_EQ(res, 1);
 }

@@ -4,3 +4,4 @@
 build/
 googletest/
 venv/
+__*__

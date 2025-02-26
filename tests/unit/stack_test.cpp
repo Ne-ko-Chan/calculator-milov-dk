@@ -26,6 +26,7 @@ TEST(StackTest, StackInit)
 {
     Stack* s = newStack();
     EXPECT_EQ(s->top, (void*)0);
+    free(s);
 }
 
 TEST(StackTest, StackPushPop)
@@ -51,3 +52,6 @@ TEST(StackTest, StackPushPop)
     nodeFree(n3);
     free(s);
 }
+
+// TODO:Split tests for push and pop 
+// in two separate tests.
