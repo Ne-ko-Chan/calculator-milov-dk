@@ -15,17 +15,19 @@ typedef struct Node {
 void nodeFree(Node*);
 }
 
-TEST(NodeTest, TestFree) {
-  Node *n = (Node*)malloc(sizeof(Node));
-  ASSERT_NE(n, (void*)0);
-  n->value = malloc(sizeof(long));
-  ASSERT_NE(n->value, (void*)0);
+TEST(NodeTest, TestFree)
+{
+    Node* n = (Node*)malloc(sizeof(Node));
+    ASSERT_NE(n, (void*)0);
+    n->value = malloc(sizeof(long));
+    ASSERT_NE(n->value, (void*)0);
 
-  nodeFree(n);
-  // Should be no memory leaks
+    nodeFree(n);
+    // Should be no memory leaks
 }
 
-TEST(NodeTest, TestFreeNull) {
-  Node *n = NULL;
-  EXPECT_NO_FATAL_FAILURE(nodeFree(n)) << "nodeFree caused crash on NULL";
+TEST(NodeTest, TestFreeNull)
+{
+    Node* n = NULL;
+    EXPECT_NO_FATAL_FAILURE(nodeFree(n)) << "nodeFree caused crash on NULL";
 }

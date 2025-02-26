@@ -112,6 +112,7 @@ def test_wrong_operand_operator_amount():
     )
     assert res.returncode != 0
 
+
 def test_operation_order():
     res = subprocess.run(
         ["build/app.exe", "--float"], input="+ 3 0", text=True, capture_output=True
@@ -128,11 +129,13 @@ def test_operation_order():
     )
     assert res.returncode != 0
 
+
 def test_tricky_operation_order():
     res = subprocess.run(
         ["build/app.exe", "--float"], input="(3) (0)+", text=True, capture_output=True
     )
     assert res.returncode != 0
+
 
 def test_good_operation_order():
     res = subprocess.run(
@@ -140,8 +143,20 @@ def test_good_operation_order():
     )
     assert res.returncode == 0
 
+
 def test_braces():
     res = subprocess.run(
         ["build/app.exe", "--float"], input="3) + (0", text=True, capture_output=True
     )
     assert res.returncode != 0
+
+
+def test_another_good():
+    res = subprocess.run(
+        ["build/app.exe", "--float"],
+        input="(2+3)+(1+4)*(1-3)",
+        text=True,
+        capture_output=True,
+    )
+    assert res.returncode == 0
+    assert (float(res.stdout) + 5) < 10 ** (-4)

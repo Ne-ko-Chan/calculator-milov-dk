@@ -48,7 +48,7 @@ build/app.exe: src/main.c
 
 build/app-test.o: src/main.c
 	@echo "Building app-test.o"
-	@$(CC) $(CFLAGS) -DGTEST -c src/main.c -o build/app-test.o
+	@$(CC) $(CFLAGS) -DGTEST -c src/main.c -o build/app-test.o -g
 
 build/unit-tests: build/precedence_test.exe build/stack_test.exe build/queue_test.exe build/parse_test.exe build/calculate_test.exe build/cli_test.exe build/node_test.exe build/print_test.exe
 
@@ -98,7 +98,7 @@ build/parse_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/parse
 		tests/unit/parse_test.cpp \
 		build/gtest/gtest_main.a build/app-test.o \
 		-fsanitize=address \
-		-o build/parse_test.exe
+		-o build/parse_test.exe -g
 
 build/queue_test.exe: build/gtest/gtest_main.a build/app-test.o tests/unit/queue_test.cpp
 	@echo "Building queue unit-tests"

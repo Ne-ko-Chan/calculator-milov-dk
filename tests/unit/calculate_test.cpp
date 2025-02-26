@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <gtest/gtest.h>
+#include <string>
 #include <unistd.h>
 
 extern "C" {
@@ -61,6 +62,7 @@ TEST(CalculateTest, CountTest)
     *(long*)arg2.value = 2;
     res = count(&op, &arg1, &arg2);
     EXPECT_EQ(res, 4);
+
     free(op.value);
     free(arg1.value);
     free(arg2.value);
@@ -88,18 +90,33 @@ TEST(CalculateTest, CalculateFunc)
 TEST(CalculateTest, CalculateStdin)
 {
     const char* input = "(1+2 )-3 *4/ 5";
-    char* buffer = (char*)calloc(100, sizeof(char));
     FILE* instream = fmemopen((void*)input, strlen(input), "r");
     FILE* tmpIn = stdin;
-    FILE* outstream = fmemopen((void*)buffer, 100, "w");
-    FILE* tmpOut = stdout;
     stdin = instream;
-    stdout = outstream;
+    int saved_stdout = dup(STDOUT_FILENO);
+    int pipefd[2];
+    pipe(pipefd);
+
+    dup2(pipefd[1], STDOUT_FILENO);
+    close(pipefd[1]);
+
     calculateStdin();
+    fflush(stdout);
+
+    char buffer[1024];
+    ssize_t bytes = read(pipefd[0], buffer, sizeof(buffer) - 1);
+    close(pipefd[0]);
+
+    dup2(saved_stdout, STDOUT_FILENO);
+    std::string res;
+    if (bytes > 0) {
+        buffer[bytes] = '\0';
+        res = std::string(buffer);
+    } else {
+        res = "";
+    }
     stdin = tmpIn;
-    stdout = tmpOut;
-    // EXPECT_STREQ(buffer, "1");
+    EXPECT_STREQ(res.c_str(), "1");
+    close(saved_stdout);
     fclose(instream);
-    fclose(outstream);
-    free(buffer);
 }

@@ -85,7 +85,7 @@ void stackPrint(Stack* s)
             printf("%ld\n", *(long*)tmp->value);
             break;
         case DOUBLE:
-            printf("%f\n", *(double*)tmp->value);
+            printf("%0.5f\n", *(double*)tmp->value);
             break;
         }
         tmp = tmp->next;
@@ -155,7 +155,7 @@ void queuePrint(Queue* q)
             printf("%ld\n", *(long*)tmp->value);
             break;
         case DOUBLE:
-            printf("%f\n", *(double*)tmp->value);
+            printf("%0.5f\n", *(double*)tmp->value);
             break;
         }
         tmp = tmp->next;
@@ -212,6 +212,7 @@ void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
 
 int parseStdin(Queue* q)
 {
+    ExpectedToken = 0;
     long number = 0;
     int wasNum = 0;
     char ch;
@@ -274,7 +275,7 @@ int parseStdin(Queue* q)
         default:
             if (ch >= '0' && ch <= '9') {
                 if (ExpectedToken == OPERATOR) {
-                  exit(ERR_WRONG_TOKEN_ORDER);
+                    exit(ERR_WRONG_TOKEN_ORDER);
                 }
                 wasNum = 1;
                 number = number * 10 + ch - '0';

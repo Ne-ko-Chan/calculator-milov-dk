@@ -1,14 +1,20 @@
+#include <cmath>
 #include <cstdio>
-#include <cstring>
+#include <cstdlib>
+#include <ctime>
+#include <fcntl.h>
 #include <gtest/gtest.h>
-#include <stdlib.h>
+#include <unistd.h>
+#include <utility>
+#include <vector>
 
 extern "C" {
 typedef enum EErrors {
     ERR_UNEXPECTED_CHAR = -1,
     ERR_MISMATCHED_PARANTHESES = -2,
     ERR_STACK_FUCKED = -3,
-    ERR_EMPTY_INPUT = -4
+    ERR_EMPTY_INPUT = -4,
+    ERR_WRONG_TOKEN_ORDER = -6
 } EErrors;
 
 typedef enum EType { INTEGER,
@@ -32,178 +38,81 @@ typedef struct Queue {
 int parseStdin(Queue* q);
 Queue* newQueue();
 Node* queuePop(Queue* q);
+void queuePrint(Queue*);
 void nodeFree(Node*);
 void pushIfNumberEnded(int* wasNum, long* number, Queue* q);
 }
 
-TEST(ParseTest,UtilityTestPushNumber) {
-  Queue *q = newQueue();
-  int wasNum = 0;
-  long number = 100;
-  pushIfNumberEnded(&wasNum, &number, q);
-  EXPECT_EQ(q->first, (void*)0);
-
-  wasNum = 1;
-  pushIfNumberEnded(&wasNum, &number, q);
-  EXPECT_EQ(*(long*)q->first->value, 100);
-  nodeFree(queuePop(q));
-  free(q);
-}
-
-TEST(ParseTest, SimpleTest1)
+TEST(ParseStdinTest, PushIfNumberEnded)
 {
-    auto q = newQueue();
-    const char* input = "1+2-3*4/5";
-    FILE* stream = fmemopen((void*)input, strlen(input), "r");
-    FILE* tmp = stdin;
-    stdin = stream;
-    int err = parseStdin(q);
-    fclose(stream);
-    stdin = tmp;
-
-    Node *n = NULL, *tmpn = NULL;
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 1);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 2);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '+');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 3);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 4);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '*');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 5);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '/');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '-');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    EXPECT_EQ(n, (void*)0);
+    Queue* q = newQueue();
+    long num = 123;
+    int wasNum = 1;
+    pushIfNumberEnded(&wasNum, &num, q);
+    ASSERT_NE(q->first, (void*)0) << "Didn't insert";
+    EXPECT_EQ(*(long*)q->first->value, 123) << "Inserted wrong number";
+    num = 50;
+    pushIfNumberEnded(&wasNum, &num, q);
+    EXPECT_EQ(*(long*)q->last->value, 123) << "Shouln't insert but inserted";
+    nodeFree(queuePop(q));
     free(q);
 }
 
-TEST(ParseTest, SimpleTest2)
+bool checkQueue(Queue* q, std::vector<std::pair<long, EType>> expected)
 {
+    if (q == NULL) {
+        return false;
+    }
+
+    Node* tmp = q->first;
+    int i = 0;
+    while (tmp != NULL && i < expected.size()) {
+        if (tmp->type != expected[i].second) {
+            return false;
+        }
+        if (tmp->type == OPERATOR && *(char*)tmp->value != expected[i].first) {
+            return false;
+        }
+        if (tmp->type != OPERATOR && *(long*)tmp->value != expected[i].first) {
+            return false;
+        }
+        tmp = tmp->next;
+        i++;
+    }
+    return true;
+}
+
+TEST(ParseStdinTest, HandlesSimpleMath)
+{
+    const char* input = "(1+2 )-3 *4/ 5";
+    FILE* instream = fmemopen((void*)input, strlen(input), "r");
+    FILE* tmpIn = stdin;
+    stdin = instream;
     auto q = newQueue();
-    const char* input = "(1+2 -\t \n\n\r3)*4/5";
-    FILE* stream = fmemopen((void*)input, strlen(input), "r");
-    FILE* tmp = stdin;
-    stdin = stream;
-    int err = parseStdin(q);
-    fclose(stream);
-    stdin = tmp;
+    parseStdin(q);
+    bool res = checkQueue(q, { { 1, INTEGER }, { 2, INTEGER }, { '+', OPERATOR }, { 3, INTEGER }, { 4, INTEGER }, { '*', OPERATOR }, { 5, INTEGER }, { '/', OPERATOR }, { '-', OPERATOR } });
+    fclose(instream);
+    EXPECT_EQ(res, true);
+    while (q->first != NULL) {
+        nodeFree(queuePop(q));
+    }
+    free(q);
+}
 
-    Node *n = NULL, *tmpn = NULL;
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 1);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
+TEST(ParseStdinTest, HandlesMoreMath)
+{
+    const char* input = "(1+2 )-3 *(4/ 5)";
+    FILE* instream = fmemopen((void*)input, strlen(input), "r");
+    FILE* tmpIn = stdin;
+    stdin = instream;
+    auto q = newQueue();
+    parseStdin(q);
+    bool res = checkQueue(q, { { 1, INTEGER }, { 2, INTEGER }, { '+', OPERATOR }, { 3, INTEGER }, { 4, INTEGER }, { 5, INTEGER }, { '/', OPERATOR }, { '*', OPERATOR }, { '-', OPERATOR } });
+    fclose(instream);
+    EXPECT_EQ(res, true);
+    while (q->first != NULL) {
+        nodeFree(queuePop(q));
+    }
 
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 2);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '+');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 3);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '-');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 4);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '*');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(long*)n->value, 5);
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    n = queuePop(q);
-    ASSERT_NE(n, (void*)0);
-    EXPECT_EQ(*(char*)n->value, '/');
-    tmpn = n;
-    n = n->next;
-    nodeFree(tmpn);
-
-    EXPECT_EQ(n, (void*)0);
     free(q);
 }
