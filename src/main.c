@@ -191,7 +191,7 @@ int precedence(char op1, char op2)
     }
 }
 
-int ExpextedToken = 0;
+int ExpectedToken = 0;
 void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
 {
     if (*wasNum) {
@@ -206,7 +206,7 @@ void pushIfNumberEnded(int* wasNum, long* number, Queue* q)
         }
         *number = 0;
         *wasNum = 0;
-        ExpextedToken = OPERATOR;
+        ExpectedToken = OPERATOR;
     }
 }
 
@@ -243,10 +243,10 @@ int parseStdin(Queue* q)
         case '-':
         case '*':
         case '/':
-            if (ExpextedToken != OPERATOR) {
+            if (ExpectedToken != OPERATOR) {
                 exit(ERR_WRONG_TOKEN_ORDER);
             }
-            ExpextedToken = 0;
+            ExpectedToken = 0;
             pushIfNumberEnded(&wasNum, &number, q);
             while (s->top != NULL && *(char*)s->top->value != '(' && precedence(*(char*)s->top->value, ch) != -1) {
                 tmp = stackPop(s);

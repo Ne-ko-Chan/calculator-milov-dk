@@ -19,9 +19,9 @@ clean:
 	@rm -rf build/
 	@rm -rf $(VENV_DIR)
 
-run-integration-tests: build/app.exe venv tests/integration/integration_test.py
+run-integration-tests: build/app.exe venv tests/integration/test_math.py
 	@echo "Running integration tests..."
-	@source $(VENV_DIR)/bin/activate; $(PYTEST) tests/integration/integration_test.py
+	@source $(VENV_DIR)/bin/activate; $(PYTEST) tests/integration/test_math.py
 
 run-int: build/app.exe
 	@echo "Running in integer mode"
