@@ -23,7 +23,6 @@ clean:
 	@rm -rf $(VENV_DIR)
 	@rm -rf tests/integration/__pycache__
 	@rm -rf .pytest_cache
-	@rm -rf googletest
 
 run-integration-tests: build/app.exe venv tests/integration/test_math.py
 	@echo "Running integration tests..."
