@@ -10,9 +10,12 @@ def calculate(expr: str, isFloat):
     command = ["build/app.exe"]
     if isFloat:
         command.append("--float")
-    res = subprocess.run(
-        command, input=expr, text=True, capture_output=True
-    )
+    try:
+        res = subprocess.run(
+        command, input=expr, text=True, capture_output=True, timeout=10
+        )
+    except TimeoutError:
+        raise Exception(2)
 
     if res.returncode != 0:
         raise Exception(res.returncode)
@@ -67,6 +70,8 @@ class RequestHandler(server.BaseHTTPRequestHandler):
                 return (HTTPStatus.BAD_REQUEST, "too many operands, expression is not correct")
             case -7:
                 return (HTTPStatus.BAD_REQUEST, "wrong order, expression is incorrect")
+            case 2:
+                return (HTTPStatus.INTERNAL_SERVER_ERROR, "evaluation took too long")
             case _:
                 return (HTTPStatus.INTERNAL_SERVER_ERROR, "unknown calculator error")
 
