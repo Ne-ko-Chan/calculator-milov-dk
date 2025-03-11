@@ -21,8 +21,8 @@ def calculate(expr: str, isFloat):
             return float(res.stdout)
         else:
             return int(res.stdout)
-    except ValueError as e:
-        raise e
+    except ValueError:
+        raise Exception(1)
 
 
 # REQUEST HANDELING
@@ -40,8 +40,35 @@ class RequestHandler(server.BaseHTTPRequestHandler):
             self.writeError(e.args[0],e.args[1])
             return
 
-        res = calculate(self.calcInput, isFloat)
+        try:
+            res = calculate(self.calcInput, isFloat)
+        except Exception as e:
+            code, msg = self.calcError(e.args[0])
+            self.writeError(code, msg)
+            return
+
         self.writeJSON(HTTPStatus.OK, str(res))
+
+    def calcError(self, code):
+        print(code)
+        code = code - 256
+        match code:
+            case -1:
+                return (HTTPStatus.BAD_REQUEST, "unexpected symbol in input")
+            case -2:
+                return (HTTPStatus.BAD_REQUEST, "missmatched paranteses")
+            case -3:
+                return (HTTPStatus.BAD_REQUEST, "stack corrupted during evaluation: expression is incorrect")
+            case -4:
+                return (HTTPStatus.BAD_REQUEST, "input must not be empty")
+            case -5:
+                return (HTTPStatus.BAD_REQUEST, "null division happened during evaluation")
+            case -6:
+                return (HTTPStatus.BAD_REQUEST, "too many operands, expression is not correct")
+            case -7:
+                return (HTTPStatus.BAD_REQUEST, "wrong order, expression is incorrect")
+            case _:
+                return (HTTPStatus.INTERNAL_SERVER_ERROR, "unknown calculator error")
 
     def handle404(self):
         self.writeError(HTTPStatus.NOT_FOUND, "Not Found")

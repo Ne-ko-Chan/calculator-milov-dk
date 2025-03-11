@@ -290,6 +290,9 @@ int parseStdin(Queue* q)
         stackPrint(s);
 #endif /* ifdef DEBUG */
     } while (ch != EOF);
+    if (q->first == NULL) {
+      return ERR_EMPTY_INPUT;
+    }
 
     free(s);
     return 0;
