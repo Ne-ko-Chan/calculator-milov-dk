@@ -7,17 +7,15 @@ from http import HTTPStatus
 
 # CALCULATOR WRAPPER
 def calculate(expr: str, isFloat):
+    command = ["build/app.exe"]
     if isFloat:
-        res = subprocess.run(
-            ["build/app.exe", "--float"], input=expr, text=True, capture_output=True
-        )
-    else:
-        res = subprocess.run(
-            ["build/app.exe"], input=expr, text=True, capture_output=True
-        )
+        command.append("--float")
+    res = subprocess.run(
+        command, input=expr, text=True, capture_output=True
+    )
 
     if res.returncode != 0:
-        print("ERROR!!!", res.returncode)
+        raise Exception(res.returncode)
     try:
         if isFloat:
             return float(res.stdout)
@@ -36,8 +34,10 @@ class RequestHandler(server.BaseHTTPRequestHandler):
     def handleCalc(self):
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length)
-        isFloat, err = self.parseRequest(body)
-        if err != None:
+        try:
+            isFloat = self.parseRequest(body)
+        except Exception as e:
+            self.writeError(e.args[0],e.args[1])
             return
 
         res = calculate(self.calcInput, isFloat)
@@ -71,20 +71,19 @@ class RequestHandler(server.BaseHTTPRequestHandler):
     def parseRequest(self, body):
         contentType = self.headers.get("Content-Type", "")
         if not contentType.startswith("application/json"):
-            self.writeError(
+            raise Exception(
                 HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
                 "unsupported Content-Type header value. Only application/json is supported",
+
             )
-            return (None, "Unsupported media")
 
         query = dict(parse_qsl(self.parsed.query))
         isFloat = query.get("float", "false")
         if isFloat != "true" and isFloat != "false":
-            self.writeError(
+            raise Exception(
                 HTTPStatus.BAD_REQUEST,
                 "float parameter is present, but it's value is incorrect",
             )
-            return (None, "Incorrect float value")
         if isFloat == "false":
             floatMode = False
         else:
@@ -92,10 +91,9 @@ class RequestHandler(server.BaseHTTPRequestHandler):
 
         self.calcInput = json.loads(body)
         if not isinstance(self.calcInput, str):
-            self.writeError(HTTPStatus.BAD_REQUEST, "incorrect request body")
-            return (None, "Incorrect request body")
+            raise Exception(HTTPStatus.BAD_REQUEST, "incorrect request body")
 
-        return (floatMode, None)
+        return floatMode
 
     parsed: ParseResult
     calcInput: str
