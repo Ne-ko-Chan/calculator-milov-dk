@@ -16,6 +16,7 @@ venv:
 	@echo "Creating virtual environment"
 	@python -m venv $(VENV_DIR)
 	@source $(VENV_DIR)/bin/activate; pip install -U pytest
+	@source $(VENV_DIR)/bin/activate; pip install -U structlog
 
 clean:
 	@echo "Cleaning"
@@ -28,8 +29,8 @@ run-integration-tests: build/app.exe venv tests/integration/test_math.py
 	@echo "Running integration tests..."
 	@source $(VENV_DIR)/bin/activate; $(PYTEST) tests/integration/test_math.py
 
-run-server: build/app.exe server/server.py
-	@python server/server.py
+run-server: build/app.exe venv server/server.py
+	@source $(VENV_DIR)/bin/activate; python server/server.py
 
 run-int: build/app.exe
 	@echo "Running in integer mode"

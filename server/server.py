@@ -1,8 +1,64 @@
 import subprocess
+import logging
+import structlog
 import json
 import http.server as server
 from urllib.parse import ParseResult, parse_qsl, urlparse
 from http import HTTPStatus
+
+
+def logConfig():
+    # Configure structlog
+    structlog.configure(
+        processors=[
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+
+    # Set up the root logger
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.INFO)
+
+    # Remove any existing handlers to avoid duplicates
+    for handler in rootLogger.handlers[:]:
+        rootLogger.removeHandler(handler)
+
+    # Processors for non-structlog log entries (standard logging)
+    foreignPreChain = [
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+    ]
+
+    # Console handler with colored output
+    consoleHandler = logging.StreamHandler()
+    consoleFormatter = structlog.stdlib.ProcessorFormatter(
+        processor=structlog.dev.ConsoleRenderer(colors=True),
+        foreign_pre_chain=foreignPreChain,
+    )
+    consoleHandler.setFormatter(consoleFormatter)
+
+    # JSON file handler
+    fileHandler = logging.FileHandler("log.json")
+    fileFormatter = structlog.stdlib.ProcessorFormatter(
+        processor=structlog.processors.JSONRenderer(),
+        foreign_pre_chain=foreignPreChain,
+    )
+    fileHandler.setFormatter(fileFormatter)
+
+    # Add handlers to the root logger
+    rootLogger.addHandler(consoleHandler)
+    rootLogger.addHandler(fileHandler)
+
+
+logConfig()
+LOGGER = structlog.get_logger()
 
 
 # CALCULATOR WRAPPER
@@ -12,7 +68,7 @@ def calculate(expr: str, isFloat):
         command.append("--float")
     try:
         res = subprocess.run(
-        command, input=expr, text=True, capture_output=True, timeout=10
+            command, input=expr, text=True, capture_output=True, timeout=10
         )
     except TimeoutError:
         raise Exception(2)
@@ -40,13 +96,15 @@ class RequestHandler(server.BaseHTTPRequestHandler):
         try:
             isFloat = self.parseRequest(body)
         except Exception as e:
-            self.writeError(e.args[0],e.args[1])
+            LOGGER.error("Parsing error", error=e.args[1], statusCode=e.args[0])
+            self.writeError(e.args[0], e.args[1])
             return
 
         try:
             res = calculate(self.calcInput, isFloat)
         except Exception as e:
             code, msg = self.calcError(e.args[0])
+            LOGGER.error("Calculation error", error=msg, statusCode=code)
             self.writeError(code, msg)
             return
 
@@ -61,13 +119,22 @@ class RequestHandler(server.BaseHTTPRequestHandler):
             case -2:
                 return (HTTPStatus.BAD_REQUEST, "missmatched paranteses")
             case -3:
-                return (HTTPStatus.BAD_REQUEST, "stack corrupted during evaluation: expression is incorrect")
+                return (
+                    HTTPStatus.BAD_REQUEST,
+                    "stack corrupted during evaluation: expression is incorrect",
+                )
             case -4:
                 return (HTTPStatus.BAD_REQUEST, "input must not be empty")
             case -5:
-                return (HTTPStatus.BAD_REQUEST, "null division happened during evaluation")
+                return (
+                    HTTPStatus.BAD_REQUEST,
+                    "null division happened during evaluation",
+                )
             case -6:
-                return (HTTPStatus.BAD_REQUEST, "too many operands, expression is not correct")
+                return (
+                    HTTPStatus.BAD_REQUEST,
+                    "too many operands, expression is not correct",
+                )
             case -7:
                 return (HTTPStatus.BAD_REQUEST, "wrong order, expression is incorrect")
             case 2:
@@ -80,8 +147,11 @@ class RequestHandler(server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.parsed = urlparse(self.path)
+        LOGGER.info(f"Incoming {self.command} request", path=self.parsed.path, query=self.parsed.query)
         self.routeHandlers().get(self.parsed.path, self.handle404)()
 
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+        LOGGER.info(f"{self.command} request handled", statusCode=code)
     def writeError(self, status: int, message: str):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -106,7 +176,6 @@ class RequestHandler(server.BaseHTTPRequestHandler):
             raise Exception(
                 HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
                 "unsupported Content-Type header value. Only application/json is supported",
-
             )
 
         query = dict(parse_qsl(self.parsed.query))
@@ -135,7 +204,7 @@ def run(server_class=server.HTTPServer, handler_class=RequestHandler):
     server_address = ("", 8000)
     httpd = server_class(server_address, handler_class)
 
-    print("Listening on port 8000...")
+    LOGGER.info("Started listening on port 8000")
     httpd.serve_forever()
 
 

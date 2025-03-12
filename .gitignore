@@ -6,4 +6,4 @@ googletest/
 venv/
 __*__
 .pytest_cache
-
+*.json
