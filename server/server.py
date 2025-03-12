@@ -91,6 +91,7 @@ class RequestHandler(server.BaseHTTPRequestHandler):
         return routeHandlers
 
     def handleCalc(self):
+        LOGGER.info("Calculation was requested")
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length)
         try:
@@ -143,6 +144,7 @@ class RequestHandler(server.BaseHTTPRequestHandler):
                 return (HTTPStatus.INTERNAL_SERVER_ERROR, "unknown calculator error")
 
     def handle404(self):
+        LOGGER.error("Not found", statusCode=404, path=self.path)
         self.writeError(HTTPStatus.NOT_FOUND, "Not Found")
 
     def do_POST(self):
