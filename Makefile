@@ -17,6 +17,7 @@ venv:
 	@python -m venv $(VENV_DIR)
 	@source $(VENV_DIR)/bin/activate; pip install -U pytest
 	@source $(VENV_DIR)/bin/activate; pip install -U structlog
+	@source $(VENV_DIR)/bin/activate; pip install -U PySide6
 
 clean:
 	@echo "Cleaning"
@@ -31,6 +32,10 @@ run-integration-tests: build/app.exe venv tests/integration/test_math.py
 
 run-server: build/app.exe venv server/server.py
 	@source $(VENV_DIR)/bin/activate; python server/server.py
+
+run-gui: ui_maker.py gui/gui.py
+	@source $(VENV_DIR)/bin/activate; python gui/gui.py
+
 
 run-int: build/app.exe
 	@echo "Running in integer mode"
@@ -131,3 +136,6 @@ build/gtest/gtest_main.o: $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEA
 build/gtest/gtest_main.a: build/gtest/gtest-all.o build/gtest/gtest_main.o
 	@echo "Unpacking gtest libraries"
 	@ar rv $@ $^ -o $@
+
+ui_maker.py: gui/calculatorGui.ui venv
+	source $(VENV_DIR)/bin/activate; pyside6-uic gui/calculatorGui.ui -o gui/ui_maker.py
