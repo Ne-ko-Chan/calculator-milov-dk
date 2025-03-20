@@ -149,28 +149,39 @@ class RequestHandler(server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.parsed = urlparse(self.path)
-        LOGGER.info(f"Incoming {self.command} request", path=self.parsed.path, query=self.parsed.query)
+        LOGGER.info(
+            f"Incoming {self.command} request",
+            path=self.parsed.path,
+            query=self.parsed.query,
+        )
         self.routeHandlers().get(self.parsed.path, self.handle404)()
 
     def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
         LOGGER.info(f"{self.command} request handled", statusCode=code)
+
     def writeError(self, status: int, message: str):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        body = json.dumps(
-            {
-                "error": message,
-            }
-        ).encode("utf-8")
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            body = json.dumps(
+                {
+                    "error": message,
+                }
+            ).encode("utf-8")
+            self.wfile.write(body)
+        except:
+            self.send_response(500)
 
     def writeJSON(self, status: int, obj):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        body = json.dumps(obj).encode("utf-8")
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            body = json.dumps(obj).encode("utf-8")
+            self.wfile.write(body)
+        except:
+            self.writeError(500, "errors trying to send response")
 
     def parseRequest(self, body):
         contentType = self.headers.get("Content-Type", "")

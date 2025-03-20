@@ -81,10 +81,10 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"\u041a\u0430\u043b\u044c\u043a\u0443\u043b\u044f\u0442\u043e\u0440", None))
-        self.mainTitle.setText(QCoreApplication.translate("MainWindow", u"TITLE", None))
+        self.mainTitle.setText(QCoreApplication.translate("MainWindow", u"AWESOME CALCULATOR", None))
         self.isFloat.setText(QCoreApplication.translate("MainWindow", u"float", None))
         self.sendButton.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c", None))
         self.responseTitle.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u0432\u0435\u0442 \u0441\u0435\u0440\u0432\u0435\u0440\u0430", None))
-        self.responseText.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.responseText.setText("")
     # retranslateUi
 

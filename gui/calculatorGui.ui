@@ -18,7 +18,7 @@
     <item>
      <widget class="QLabel" name="mainTitle">
       <property name="text">
-       <string>TITLE</string>
+       <string>AWESOME CALCULATOR</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -67,7 +67,7 @@
       <item>
        <widget class="QLabel" name="responseText">
         <property name="text">
-         <string>TextLabel</string>
+         <string/>
         </property>
        </widget>
       </item>
