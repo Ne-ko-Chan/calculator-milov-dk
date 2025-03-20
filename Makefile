@@ -33,7 +33,7 @@ run-integration-tests: build/app.exe venv tests/integration/test_math.py
 run-server: build/app.exe venv server/server.py
 	@source $(VENV_DIR)/bin/activate; python server/server.py
 
-run-gui: ui_maker.py gui/gui.py
+run-gui: gui/ui_maker.py gui/gui.py
 	@source $(VENV_DIR)/bin/activate; python gui/gui.py
 
 
@@ -137,5 +137,5 @@ build/gtest/gtest_main.a: build/gtest/gtest-all.o build/gtest/gtest_main.o
 	@echo "Unpacking gtest libraries"
 	@ar rv $@ $^ -o $@
 
-ui_maker.py: gui/calculatorGui.ui venv
+gui/ui_maker.py: gui/calculatorGui.ui venv
 	source $(VENV_DIR)/bin/activate; pyside6-uic gui/calculatorGui.ui -o gui/ui_maker.py
