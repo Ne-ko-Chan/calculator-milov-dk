@@ -1,8 +1,9 @@
 import sys
+import json
 import http.client
 
 from PySide6.QtCore import QObject, QRegularExpression
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtGui import QColor, QColorConstants, QRegularExpressionValidator
 from PySide6.QtWidgets import QApplication, QMainWindow
 
 from ui_maker import Ui_MainWindow
@@ -59,7 +60,12 @@ class MyGuiApp(QObject):
             )
             response = self.conn.getresponse()
             responseBytes = response.read()
-            self.uiMaker.responseText.setText(responseBytes.decode("utf-8").strip('"'))
+            if response.getcode() != 200:
+                errorMsg = json.loads(responseBytes.decode("utf-8").strip('"'))["error"]
+                self.uiMaker.responseText.setText(errorMsg)
+                self.uiMaker.responseText.setPalette(QColor(QColorConstants.Red))
+            else:
+                self.uiMaker.responseText.setText(responseBytes.decode("utf-8").strip('"'))
             self.conn.close()
         except Exception as e:
             print(e)
