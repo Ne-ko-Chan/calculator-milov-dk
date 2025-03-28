@@ -33,7 +33,7 @@ class MyGuiApp(QObject):
             return
 
         self.setMode(True)
-        self.sendRequest(self.uiMaker.lineEdit.text(), 3000)
+        self.sendRequest(self.uiMaker.lineEdit.text(), self.uiMaker.isFloat.isChecked())
         self.setMode(False)
 
     def run(self):
@@ -50,11 +50,11 @@ class MyGuiApp(QObject):
             self.uiMaker.lineEdit.setEnabled(True)
             self.uiMaker.isFloat.setEnabled(True)
 
-    def sendRequest(self, string: str, timeout):
+    def sendRequest(self, string: str, isFloat: bool):
         try:
             self.conn.request(
                 "POST",
-                "/calc",
+                "/calc" if not isFloat else "/calc?float=true",
                 body='"' + string + '"',
                 headers={"Content-Type": "application/json"},
             )
@@ -68,7 +68,8 @@ class MyGuiApp(QObject):
                 self.uiMaker.responseText.setText(responseBytes.decode("utf-8").strip('"'))
             self.conn.close()
         except Exception as e:
-            print(e)
+            self.uiMaker.responseText.setText("timed out")
+            self.conn.close()
 
     isWaitingMode = False
 
